@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../FolderSyncTests/FolderSyncTests.csproj" />
+  <Project Path="FolderSync.csproj" />
+</Solution>

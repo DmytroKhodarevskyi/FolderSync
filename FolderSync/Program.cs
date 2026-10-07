@@ -1,0 +1,61 @@
+﻿using FolderSync;
+
+/// <summary>Immutable settings. Created once by ArgumentParser, passed around read-only.</summary>
+public sealed record SyncOptions(
+    string SourcePath,
+    string ReplicaPath,
+    TimeSpan Interval,
+    string LogPath
+);
+
+public static class Program
+{
+    public static int Main(string[] args)
+    {
+        using var cts = new CancellationTokenSource();
+        Console.CancelKeyPress += (_, e) =>
+        {
+            e.Cancel = true;
+            Console.WriteLine("Application Finished Gracefully");
+            cts.Cancel();
+        };
+
+        return MainImpl(args, cts.Token);
+    }
+
+    public static int MainImpl(string[] args, CancellationToken cts)
+    {
+        SyncOptions options;
+
+        try
+        {
+            options = ArgumentParser.Parse(args);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 1;
+        }
+
+        using var logger = new SyncLogger(options.LogPath);
+        var synchronizer = new FolderSynchronizer(options.SourcePath, options.ReplicaPath, logger);
+
+        // Loop infinitely until user ends the program
+        while (!cts.IsCancellationRequested)
+        {
+            try
+            {
+                synchronizer.SyncOnce();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Sync failed: {ex.Message}");
+                logger.Error($"Sync failed: {ex.Message}");
+            }
+
+            cts.WaitHandle.WaitOne(options.Interval);
+        }
+
+        return 0;
+    }
+}
