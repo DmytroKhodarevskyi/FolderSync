@@ -4,7 +4,7 @@ A simple command-line folder synchronization utility that continuously monitors 
 
 ## Application Flow
 
-1. **Parse Arguments**: The application expects exactly 4 command-line arguments in fixed order
+1. **Parse Arguments**: The application expects exactly 4 command-line arguments with flags
 2. **Validate Input**: Paths are validated, interval is checked, and nested paths are rejected
 3. **Initialize Logger**: A log file is created to track sync operations
 4. **Start Sync Loop**: Continuously synchronizes files at the specified interval
@@ -12,28 +12,31 @@ A simple command-line folder synchronization utility that continuously monitors 
 
 ## Command-Line Arguments
 
-The application requires exactly **4 arguments** in the following order:
+The application requires exactly **4 arguments** which are parsed using flags:
 
 ```
 FolderSync.exe "Source" "Replica" "Interval" "LogFile"
 ```
 
-| Argument | Description | Requirements |
-|----------|-------------|--------------|
-| `Source` | Path to the source directory | Must be an existing directory |
-| `Replica` | Path to the replica directory | Can be created if doesn't exist; cannot be nested within Source |
-| `Interval` | Sync interval in seconds | Must be a positive integer (> 0) |
-| `LogFile` | Path to the log file | Directory will be created if needed |
+| Argument | Flag | Description | Requirements |
+|----------|-------------|-------------|--------------|
+| `Source` | --source / -s | Path to the source directory | Must be an existing directory |
+| `Replica` | --replica / -r | Path to the replica directory | Can be created if doesn't exist; cannot be nested within Source |
+| `Interval` | --interval / -i | Sync interval in seconds | Must be a positive integer (> 0) |
+| `LogFile` | --log / -l | Path to the log file | Directory will be created if needed |
+| `Help` | --help / -h | Prints usage | - |
 
 ## Example
 
 ```
-FolderSync.exe "C:\MyFiles" "D:\MyFilesBackup" 30 "C:\Logs\sync.log"
+FolderSync.exe --source "C:\MyFiles" --replica "D:\MyFilesBackup" --interval 30 --log "C:\Logs\sync.log"
 ```
 
 This will:
 - Sync files from `C:\MyFiles` to `D:\MyFilesBackup` every 30 seconds
 - Log all operations to `C:\Logs\sync.log`
+
+Arguments can be passed in any order
 
 ## Validation Rules
 
@@ -50,7 +53,7 @@ The application logs to both **console** and **file**:
 - **INFO** messages: Sync operations and status updates
 - **ERROR** messages: Failures and exceptions
 
-Log format: `yyyy-MM-dd HH:mm:ss [LEVEL] message`
+Log format: `yyyy-MM-dd HH:mm:ss Nn [LEVEL] message` where **n** is the number of sync
 
 ## Stopping the Application
 
@@ -76,10 +79,15 @@ If either check fails, the file in the replica is overwritten with the source fi
 
 ## Design Notes
 
-This is a straightforward implementation designed to avoid overengineering. Key characteristics:
+Key characteristics:
 
-- Fixed command-line argument order (no named parameters)
+- Command-line argument parsing with flags
 - Synchronous, continuous sync loop with no batching
 - Simple file comparison using SHA256
 - Single-pass synchronization per interval
 - Graceful shutdown via Ctrl+C cancellation token
+
+## Tests
+
+This repository also contains tests, which are for general application verification, 
+i did not create test cases for *everything*.

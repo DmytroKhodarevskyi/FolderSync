@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml.Linq;
 
 namespace FolderSync
 {
@@ -80,9 +81,9 @@ namespace FolderSync
 
             var files = Directory.EnumerateFiles(_source, "*", SearchOption.AllDirectories);
 
-            foreach (var f in files)
+            foreach (var sourceFile in files)
             {
-                var relative = Path.GetRelativePath(_source, f);
+                var relative = Path.GetRelativePath(_source, sourceFile);
                 var replicaFilePath = Path.Combine(_replica, relative);
 
                 try
@@ -100,21 +101,39 @@ namespace FolderSync
                     // Copy if don't exist
                     if (!File.Exists(replicaFilePath))
                     {
-                        File.Copy(f, replicaFilePath);
-                        _log.Info(_synccount, $"File {f} copied to {replicaFilePath}");
+                        File.Copy(sourceFile, replicaFilePath);
+                        _log.Info(_synccount, $"File {sourceFile} copied to {replicaFilePath}");
                     }
                     // Overwrite corrupted file
-                    else if (!FileComparer.AreEqual(new FileInfo(f), new FileInfo(replicaFilePath)))
+                    else if (
+                        !FileComparer.AreEqual(
+                            new FileInfo(sourceFile),
+                            new FileInfo(replicaFilePath)
+                        )
+                    )
                     {
-                        File.Copy(f, replicaFilePath, overwrite: true);
-                        _log.Info(_synccount, $"File {f} overwritten on {replicaFilePath}");
+                        var attributes = File.GetAttributes(replicaFilePath);
+
+                        if ((attributes & FileAttributes.ReadOnly) != 0)
+                        {
+                            File.SetAttributes(
+                                replicaFilePath,
+                                attributes & ~FileAttributes.ReadOnly
+                            );
+                        }
+
+                        File.Copy(sourceFile, replicaFilePath, overwrite: true);
+                        _log.Info(
+                            _synccount,
+                            $"File {sourceFile} overwritten on {replicaFilePath}"
+                        );
                     }
                 }
                 catch (Exception ex)
                 {
                     _log.Error(
                         _synccount,
-                        $"There was a problem with checking file {f} on {replicaFilePath}: {ex.Message}"
+                        $"There was a problem with checking file {sourceFile} on {replicaFilePath}: {ex.Message}"
                     );
                 }
             }
@@ -127,22 +146,32 @@ namespace FolderSync
 
             var files = Directory.EnumerateFiles(_replica, "*", SearchOption.AllDirectories);
 
-            foreach (var f in files)
+            foreach (var replicaFile in files)
             {
-                var relative = Path.GetRelativePath(_replica, f);
+                var relative = Path.GetRelativePath(_replica, replicaFile);
                 var sourceFilePath = Path.Combine(_source, relative);
 
                 try
                 {
                     if (!File.Exists(sourceFilePath))
                     {
-                        File.Delete(f);
-                        _log.Info(_synccount, $"File {f} deleted in replica");
+                        var attributes = File.GetAttributes(replicaFile);
+
+                        if ((attributes & FileAttributes.ReadOnly) != 0)
+                        {
+                            File.SetAttributes(replicaFile, attributes & ~FileAttributes.ReadOnly);
+                        }
+
+                        File.Delete(replicaFile);
+                        _log.Info(_synccount, $"File {replicaFile} deleted in replica");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(_synccount, $"There was an error deleting file {f}: {ex.Message}");
+                    _log.Error(
+                        _synccount,
+                        $"There was an error deleting file {replicaFile}: {ex.Message}"
+                    );
                 }
             }
 
