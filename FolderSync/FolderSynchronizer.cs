@@ -11,6 +11,10 @@ namespace FolderSync
         private readonly string _replica;
         private readonly SyncLogger _log;
 
+        private int _synccount = 1;
+
+        public int SyncCount => _synccount;
+
         public FolderSynchronizer(string source, string replica, SyncLogger log)
         {
             _source = source;
@@ -23,6 +27,7 @@ namespace FolderSync
             EnsureReplicaRoot();
             CreateAndUpdateFromSource();
             RemoveExtrasFromReplica();
+            _synccount++;
         }
 
         private void EnsureReplicaRoot()
@@ -31,7 +36,7 @@ namespace FolderSync
             Directory.CreateDirectory(_replica);
             if (!existed)
             {
-                _log.Info("Replica directory created.");
+                _log.Info(_synccount, "Replica directory created.");
             }
         }
 
@@ -54,13 +59,22 @@ namespace FolderSync
                 {
                     if (!Directory.Exists(replicaDir))
                     {
+                        if (File.Exists(replicaDir))
+                        {
+                            File.Delete(replicaDir);
+                            _log.Info(
+                                _synccount,
+                                $"Removed file {replicaDir} to make room for directory"
+                            );
+                        }
+
                         Directory.CreateDirectory(replicaDir);
-                        _log.Info($"Folder {d} created");
+                        _log.Info(_synccount, $"Folder {d} created");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error($"Folder {d} failed to create: {ex.Message}");
+                    _log.Error(_synccount, $"Folder {d} failed to create: {ex.Message}");
                 }
             }
 
@@ -73,22 +87,33 @@ namespace FolderSync
 
                 try
                 {
+                    // Edgecase: If a directory exists at this path, delete it
+                    if (Directory.Exists(replicaFilePath))
+                    {
+                        Directory.Delete(replicaFilePath, recursive: true);
+                        _log.Info(
+                            _synccount,
+                            $"Removed directory {replicaFilePath} to make room for file"
+                        );
+                    }
+
                     // Copy if don't exist
                     if (!File.Exists(replicaFilePath))
                     {
                         File.Copy(f, replicaFilePath);
-                        _log.Info($"File {f} copied to {replicaFilePath}");
+                        _log.Info(_synccount, $"File {f} copied to {replicaFilePath}");
                     }
                     // Overwrite corrupted file
                     else if (!FileComparer.AreEqual(new FileInfo(f), new FileInfo(replicaFilePath)))
                     {
                         File.Copy(f, replicaFilePath, overwrite: true);
-                        _log.Info($"File {f} overwritten on {replicaFilePath}");
+                        _log.Info(_synccount, $"File {f} overwritten on {replicaFilePath}");
                     }
                 }
                 catch (Exception ex)
                 {
                     _log.Error(
+                        _synccount,
                         $"There was a problem with checking file {f} on {replicaFilePath}: {ex.Message}"
                     );
                 }
@@ -112,12 +137,12 @@ namespace FolderSync
                     if (!File.Exists(sourceFilePath))
                     {
                         File.Delete(f);
-                        _log.Info($"File {f} deleted in replica");
+                        _log.Info(_synccount, $"File {f} deleted in replica");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error($"There was an error deleting file {f}: {ex.Message}");
+                    _log.Error(_synccount, $"There was an error deleting file {f}: {ex.Message}");
                 }
             }
 
@@ -136,12 +161,15 @@ namespace FolderSync
                     if (!Directory.Exists(sourceRelativePath))
                     {
                         Directory.Delete(folder);
-                        _log.Info($"Folder {folder} deleted");
+                        _log.Info(_synccount, $"Folder {folder} deleted");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error($"There was an error deleting folder {folder}: {ex.Message}");
+                    _log.Error(
+                        _synccount,
+                        $"There was an error deleting folder {folder}: {ex.Message}"
+                    );
                 }
             }
         }

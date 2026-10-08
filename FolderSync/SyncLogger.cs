@@ -19,18 +19,18 @@ namespace FolderSync
             _file = new StreamWriter(logPath, append: true) { AutoFlush = true };
         }
 
-        public void Info(string message)
+        public void Info(int syncCount, string message)
         {
-            var formatted = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [INFO] {message}";
+            var formatted = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} N{syncCount} [INFO] {message}";
             Console.WriteLine(formatted);
-            _file.Write($"{formatted}\n");
+            _file.WriteLine($"{formatted}");
         }
 
-        public void Error(string message)
+        public void Error(int syncCount, string message)
         {
-            var formatted = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [ERROR] {message}";
+            var formatted = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} N{syncCount} [ERROR] {message}";
             Console.Error.WriteLine(formatted);
-            _file.Write($"{formatted}\n");
+            _file.WriteLine($"{formatted}");
         }
 
         public void Dispose() => _file.Dispose();

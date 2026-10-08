@@ -50,7 +50,7 @@ public static class Program
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Sync failed: {ex.Message}");
-                logger.Error($"Sync failed: {ex.Message}");
+                logger.Error(synchronizer.SyncCount, $"Sync failed: {ex.Message}");
             }
 
             cts.WaitHandle.WaitOne(options.Interval);
