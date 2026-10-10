@@ -98,19 +98,19 @@ namespace FolderSync
                         );
                     }
 
-                    // Copy if don't exist
-                    if (!File.Exists(replicaFilePath))
-                    {
-                        File.Copy(sourceFile, replicaFilePath);
-                        _log.Info(_synccount, $"File {sourceFile} copied to {replicaFilePath}");
-                    }
-                    // Overwrite corrupted file
-                    else if (
-                        !FileComparer.AreEqual(
+                    bool needsCopy =
+                        !File.Exists(replicaFilePath)
+                        || !FileComparer.AreEqual(
                             new FileInfo(sourceFile),
                             new FileInfo(replicaFilePath)
-                        )
-                    )
+                        );
+
+                    // Everything is ok, no need to copy
+                    if (!needsCopy)
+                        continue;
+
+                    // Check for readonly in replica
+                    if (File.Exists(replicaFilePath))
                     {
                         var attributes = File.GetAttributes(replicaFilePath);
 
@@ -121,12 +121,37 @@ namespace FolderSync
                                 attributes & ~FileAttributes.ReadOnly
                             );
                         }
+                    }
 
-                        File.Copy(sourceFile, replicaFilePath, overwrite: true);
+                    // Try to copy or overwrite using temp
+                    var tempPath =
+                        Path.GetFileNameWithoutExtension(replicaFilePath)
+                        + $".{Guid.NewGuid():N}.tmp";
+
+                    try
+                    {
+                        File.Copy(sourceFile, tempPath, overwrite: true);
+                        File.Move(tempPath, replicaFilePath, overwrite: true);
+
                         _log.Info(
                             _synccount,
                             $"File {sourceFile} overwritten on {replicaFilePath}"
                         );
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            if (File.Exists(tempPath))
+                                File.Delete(tempPath);
+                        }
+                        catch (Exception cleanupEx)
+                        {
+                            _log.Error(
+                                _synccount,
+                                $"Could not remove temporary file {tempPath}: {cleanupEx.Message}"
+                            );
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -142,8 +167,6 @@ namespace FolderSync
         // Pass 2: walk REPLICA. Anything with no counterpart in source must go.
         private void RemoveExtrasFromReplica()
         {
-            // Edge case: same name is a file in source but a directory in replica (or the reverse)
-
             var files = Directory.EnumerateFiles(_replica, "*", SearchOption.AllDirectories);
 
             foreach (var replicaFile in files)

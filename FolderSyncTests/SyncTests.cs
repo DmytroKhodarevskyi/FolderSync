@@ -111,7 +111,7 @@ public class SyncTests
 
         var exitCode = Run(arguments);
 
-        Assert.That(exitCode, Is.Not.EqualTo(0));
+        Assert.That(exitCode, Is.EqualTo(0));
     }
 
     [Test]
@@ -486,6 +486,29 @@ public class SyncTests
     }
 
     [Test]
+    public void MainImpl_VeryLongPath_IsSynchronized()
+    {
+        var path = _source;
+
+        for (int i = 0; i < 30; i++)
+        {
+            path = Path.Combine(path, new string('a', 10));
+            Directory.CreateDirectory(path);
+        }
+
+        var filePath = Path.Combine(path, "file.txt");
+
+        // Check for PathTooLongException
+        Assert.That(filePath.Length, Is.GreaterThan(260));
+
+        File.WriteAllText(filePath, "very long path");
+
+        Run();
+
+        AssertTreesEqual(_source, _replica);
+    }
+
+    [Test]
     public void SyncLogger_ContainsOperations_WritesLogFile()
     {
         Write(_source, "new.txt", "n");
@@ -580,8 +603,9 @@ public class SyncTests
     // [x] Large file (e.g. 50 MB) syncs correctly and in reasonable time
     // [x] Read-only file in replica gets overwritten or removed
     // [x] One locked/unreadable file does not stop the other files from syncing (open it with FileShare.None)
-    // [ ] Handle long paths (files or directories)
-    // [ ] Handle symbolic links
+    // [x] Handle long paths (files or directories)
+    // [-] Sigterm graceful shutdown
+    // [-] Handle symbolic links
     //
     // LOGGING
     // [x] Log is appended, not overwritten, across two program runs

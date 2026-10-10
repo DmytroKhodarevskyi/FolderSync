@@ -25,6 +25,12 @@ public static class Program
 
     public static int MainImpl(string[] args, CancellationToken cts)
     {
+        if (args.Contains("-h") || args.Contains("--help"))
+        {
+            Console.WriteLine(ArgumentParser.Usage);
+            return 0;
+        }
+
         SyncOptions options;
 
         try

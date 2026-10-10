@@ -86,6 +86,11 @@ Key characteristics:
 - Simple file comparison using SHA256
 - Single-pass synchronization per interval
 - Graceful shutdown via Ctrl+C cancellation token
+- Symbolic links are not supported to avoid dev mode
+- If program is somehow shutdown or interrupted
+  during copying, there is possibility of invalid state for replica,
+  for this implementation rerun synchronization to fix state is suggested.
+  (ACID can be violated during execution, i acknowledge that but did not 
 
 ## Tests
 
