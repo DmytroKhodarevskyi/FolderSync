@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Linq;
-
-namespace FolderSync
+﻿namespace FolderSync
 {
     /// <summary>One synchronization pass. Knows nothing about timing or arguments.</summary>
     public sealed class FolderSynchronizer
@@ -25,10 +20,16 @@ namespace FolderSync
 
         public void SyncOnce()
         {
-            EnsureReplicaRoot();
-            CreateAndUpdateFromSource();
-            RemoveExtrasFromReplica();
-            _synccount++;
+            try
+            {
+                EnsureReplicaRoot();
+                CreateAndUpdateFromSource();
+                RemoveExtrasFromReplica();
+            }
+            finally
+            {
+                _synccount++;
+            }
         }
 
         private void EnsureReplicaRoot()
@@ -124,19 +125,17 @@ namespace FolderSync
                     }
 
                     // Try to copy or overwrite using temp
-                    var tempPath =
-                        Path.GetFileNameWithoutExtension(replicaFilePath)
-                        + $".{Guid.NewGuid():N}.tmp";
+                    var tempPath = Path.Combine(
+                        Path.GetDirectoryName(replicaFilePath)!,
+                        $".{Guid.NewGuid():N}.tmp"
+                    );
 
                     try
                     {
                         File.Copy(sourceFile, tempPath, overwrite: true);
                         File.Move(tempPath, replicaFilePath, overwrite: true);
 
-                        _log.Info(
-                            _synccount,
-                            $"File {sourceFile} overwritten on {replicaFilePath}"
-                        );
+                        _log.Info(_synccount, $"File {sourceFile} copied to {replicaFilePath}");
                     }
                     finally
                     {

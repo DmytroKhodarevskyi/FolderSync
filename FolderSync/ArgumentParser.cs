@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FolderSync
+﻿namespace FolderSync
 {
     /// <summary>
     /// Parse command-line arguments as: "Source" "Replica" "Interval (Seconds)" "Log"
@@ -149,6 +145,25 @@ namespace FolderSync
             {
                 throw new ArgumentException(
                     "Replica can't be inside source folder nor the other way around"
+                );
+            }
+
+            if (String.Equals(Path.GetDirectoryName(logFile), logFile))
+            {
+                throw new ArgumentException("Log path should be a file, not a directory");
+            }
+
+            if (ArePathsNested(logFile, srcPath))
+            {
+                throw new ArgumentException(
+                    "Please, specify log somewhere outside the source path, as it can bring the conflicts"
+                );
+            }
+
+            if (ArePathsNested(logFile, replicaPath))
+            {
+                throw new ArgumentException(
+                    "Please, specify log somewhere outside the replica path, as it can bring the conflicts"
                 );
             }
 

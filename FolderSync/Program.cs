@@ -16,7 +16,6 @@ public static class Program
         Console.CancelKeyPress += (_, e) =>
         {
             e.Cancel = true;
-            Console.WriteLine("Application Finished Gracefully");
             cts.Cancel();
         };
 

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FolderSync
+﻿namespace FolderSync
 {
     public sealed class SyncLogger : IDisposable
     {

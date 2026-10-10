@@ -1,12 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
-using NUnit.Framework;
-using NUnit.Framework.Constraints;
-
-namespace FolderSync.Tests;
+﻿namespace FolderSync.Tests;
 
 /// <summary>
 /// Black-box tests: every test runs the program through Program.MainImpl(args, cancellationToken),
@@ -239,6 +231,46 @@ public class SyncTests
             _replica,
             IntervalFlag,
             "5",
+        };
+
+        var exitCode = Run(arguments);
+
+        Assert.That(exitCode, Is.Not.EqualTo(0));
+    }
+
+    [Test]
+    public void ArgumentParser_LogInsideSource_ReturnsNonZero()
+    {
+        string[] arguments = new[]
+        {
+            SourceFlag,
+            "abc/def",
+            ReplicaFlag,
+            _replica,
+            IntervalFlag,
+            "5",
+            LogFlag,
+            "abc/def/log.txt",
+        };
+
+        var exitCode = Run(arguments);
+
+        Assert.That(exitCode, Is.Not.EqualTo(0));
+    }
+
+    [Test]
+    public void ArgumentParser_LogInsideReplica_ReturnsNonZero()
+    {
+        string[] arguments = new[]
+        {
+            SourceFlag,
+            _source,
+            ReplicaFlag,
+            "abc/def",
+            IntervalFlag,
+            "5",
+            LogFlag,
+            "abc/def/log.txt",
         };
 
         var exitCode = Run(arguments);
@@ -594,6 +626,8 @@ public class SyncTests
     // [x] Interval is not a number ("abc", "1.5", "")
     // [x] Source folder does not exist
     // [x] Replica inside source (and source inside replica) is rejected
+    // [x] Log inside source
+    // [x] Log inside replica
     //
     // SYNC BEHAVIOUR
     // [x] Idempotency: second run on an already-synced pair changes nothing (compare LastWriteTime of replica files)
