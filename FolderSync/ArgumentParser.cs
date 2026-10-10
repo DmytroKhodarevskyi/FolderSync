@@ -148,11 +148,6 @@
                 );
             }
 
-            if (String.Equals(Path.GetDirectoryName(logFile), logFile))
-            {
-                throw new ArgumentException("Log path should be a file, not a directory");
-            }
-
             if (ArePathsNested(logFile, srcPath))
             {
                 throw new ArgumentException(
