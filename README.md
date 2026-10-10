@@ -88,6 +88,7 @@ Key characteristics:
 - Graceful shutdown via Ctrl+C cancellation token
 - Symbolic links are not supported to avoid dev mode
 - Log must not be in source or replica to avoid conflicts
+- Program is designed for Windows system
 
 ## Tests
 
