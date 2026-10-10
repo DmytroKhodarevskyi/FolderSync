@@ -201,14 +201,38 @@ public class SyncTests
     }
 
     [Test]
-    public void ArgumentParser_NestedSourceAndReplica_ReturnsNonZero()
+    public void ArgumentParser_NestedReplica_ReturnsNonZero()
     {
+        var nestedReplica = Path.Combine(_source, "replica");
+
         string[] arguments = new[]
         {
             SourceFlag,
-            "abc/def",
+            _source,
             ReplicaFlag,
-            "def/abc",
+            nestedReplica,
+            IntervalFlag,
+            "5",
+            LogFlag,
+            _log,
+        };
+
+        var exitCode = Run(arguments);
+
+        Assert.That(exitCode, Is.Not.EqualTo(0));
+    }
+
+    [Test]
+    public void ArgumentParser_NestedSource_ReturnsNonZero()
+    {
+        var nestedSource = Path.Combine(_replica, "source");
+
+        string[] arguments = new[]
+        {
+            SourceFlag,
+            nestedSource,
+            ReplicaFlag,
+            _replica,
             IntervalFlag,
             "5",
             LogFlag,
