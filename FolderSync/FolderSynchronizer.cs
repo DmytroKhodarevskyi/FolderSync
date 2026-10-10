@@ -26,6 +26,10 @@
                 CreateAndUpdateFromSource();
                 RemoveExtrasFromReplica();
             }
+            catch (Exception ex)
+            {
+                _log.Error(_synccount, $"Sync failed: {ex.Message}");
+            }
             finally
             {
                 _synccount++;

@@ -48,15 +48,7 @@ public static class Program
         // Loop infinitely until user ends the program
         while (!cts.IsCancellationRequested)
         {
-            try
-            {
-                synchronizer.SyncOnce();
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Sync failed: {ex.Message}");
-                logger.Error(synchronizer.SyncCount, $"Sync failed: {ex.Message}");
-            }
+            synchronizer.SyncOnce();
 
             cts.WaitHandle.WaitOne(options.Interval);
         }
